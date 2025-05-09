@@ -1,0 +1,62 @@
+import tensorflow as tf
+from tensorflow.keras import layers, models
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Load MNIST dataset
+(train_images, train_labels), (test_images, test_labels) = tf.keras.datasets.mnist.load_data()
+
+# Normalize images to [0,1]
+train_images = train_images.astype('float32') / 255.0
+test_images = test_images.astype('float32') / 255.0
+
+# Expand dims to match input shape (batch, height, width, channels)
+train_images = np.expand_dims(train_images, -1)
+test_images = np.expand_dims(test_images, -1)
+
+# Build the CNN model
+model = models.Sequential([
+    layers.Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=(28, 28, 1)),
+    layers.MaxPooling2D(pool_size=(2, 2)),
+    layers.Conv2D(64, kernel_size=(3, 3), activation='relu'),
+    layers.MaxPooling2D(pool_size=(2, 2)),
+    layers.Flatten(),
+    layers.Dense(128, activation='relu'),
+    layers.Dropout(0.2),
+    layers.Dense(10, activation='softmax')  # 10 classes for digits 0-9
+])
+
+# Compile the model
+model.compile(
+    optimizer='adam',
+    loss='sparse_categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+# Train the model
+print("Training the model...")
+model.fit(train_images, train_labels, epochs=10, batch_size=128, validation_split=0.1)
+
+# Evaluate on test data
+test_loss, test_acc = model.evaluate(test_images, test_labels)
+print(f"\nTest accuracy: {test_acc:.4f}")
+
+# Make predictions
+predictions = model.predict(test_images)
+
+# Function to visualize predictions
+def plot_predictions(images, labels, predictions, index):
+    plt.figure(figsize=(8,4))
+    plt.subplot(1,2,1)
+    plt.imshow(images[index].reshape(28,28), cmap='gray')
+    plt.title(f"True label: {labels[index]}")
+    plt.axis('off')
+    plt.subplot(1,2,2)
+    plt.bar(range(10), predictions[index])
+    plt.title("Predicted probabilities")
+    plt.xticks(range(10))
+    plt.show()
+
+# Visualize some predictions
+for i in range(5):
+    plot_predictions(test_images, test_labels, predictions, index=i)
